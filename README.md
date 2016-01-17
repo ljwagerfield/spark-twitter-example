@@ -197,7 +197,7 @@ Use the standard method:
     sbt assembly
 
 Note: Spark and Hadoop are provided by the cluster manager at runtime. These dependencies have therefor been *excluded* from
-the fat JAR by scoping them to `provided` configuration (see `build.sbt`).
+the fat JAR by scoping them as `provided` configuration (see `build.sbt`).
 
 ### 2) Submit to Spark
 
