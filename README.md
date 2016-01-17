@@ -2,6 +2,10 @@
 
 Spark example app that demonstrates, on a broad level, various aspects of Spark.
 
+-   [**Setup**](#setup)
+
+-   [**Running**](#running-the-application)
+
 ## Setup
 
 These instructions have been tested against OS X 10.11.
