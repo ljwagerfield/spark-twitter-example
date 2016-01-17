@@ -264,7 +264,8 @@ worker threads) or remove `[_]` entirely to serialise the workload.
       --master "local[*]" \
       --deploy-mode client \
       --class com.wagerfield.spark.twitter.Application \
-      target/scala-2.11/spark-twitter-example-assembly-1.0.jar
+      target/scala-2.11/spark-twitter-example-assembly-1.0.jar \
+      ~/spark-checkpoints
 
 Note: You will receive *warnings* regarding Spark not replicating to any peers. This is because the input dstreams that receive data over
 the network (from Twitter in this case) attempt to persist data to two nodes by default. Otherwise if the executor fails, the block of
@@ -284,7 +285,8 @@ terminology).
       --num-executors 2 \
       --driver-memory 512m \
       --driver-cores 1 \
-      target/scala-2.11/spark-twitter-example-assembly-1.0.jar
+      target/scala-2.11/spark-twitter-example-assembly-1.0.jar \
+      hdfs://localhost/
 
 Note: When using YARN as the cluster manager, the resource manager's address is picked up from the Hadoop configuration located by the
 environment variable `HADOOP_CONF_DIR` we defined previously. Therefore `--master` is just `yarn`.
@@ -303,4 +305,5 @@ In this setting, the *driver* will run out-of-process and within the "applicatio
       --num-executors 2 \
       --driver-memory 512m \
       --driver-cores 1 \
-      target/scala-2.11/spark-twitter-example-assembly-1.0.jar
+      target/scala-2.11/spark-twitter-example-assembly-1.0.jar \
+      hdfs://localhost/
