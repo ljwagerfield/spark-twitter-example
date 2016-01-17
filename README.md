@@ -6,6 +6,8 @@ Spark example app that demonstrates, on a broad level, various aspects of Spark.
 
 -   [**Running**](#running-the-application)
 
+*Special thanks to Alex Fonseca for his [YARN/Hadoop set up guide](http://www.alexjf.net/blog/distributed-systems/hadoop-yarn-installation-definitive-guide/)*
+
 ## Setup
 
 These instructions have been tested against OS X 10.11.
@@ -112,6 +114,45 @@ We install Hadoop locally to provide a more 'production realistic' environment f
                 </property>
             </configuration>
 
+    3.  Replace the `<configuration>` element in file `$HADOOP_PREFIX/etc/hadoop/yarn-site.xml` with:
+
+            <configuration>
+                <property>
+                    <name>yarn.scheduler.minimum-allocation-mb</name>
+                    <value>256</value>
+                    <description>Minimum limit of memory to allocate to each container request at the Resource Manager.</description>
+                </property>
+                <property>
+                    <name>yarn.scheduler.maximum-allocation-mb</name>
+                    <value>896</value>
+                    <description>Maximum limit of memory to allocate to each container request at the Resource Manager.</description>
+                </property>
+                <property>
+                    <name>yarn.scheduler.minimum-allocation-vcores</name>
+                    <value>1</value>
+                    <description>The minimum allocation for every container request at the RM, in terms of virtual CPU cores. Requests lower than this won't take effect, and the specified value will get allocated the minimum.</description>
+                </property>
+                <property>
+                    <name>yarn.scheduler.maximum-allocation-vcores</name>
+                    <value>1</value>
+                    <description>The maximum allocation for every container request at the RM, in terms of virtual CPU cores. Requests higher than this won't take effect, and will get capped to this value.</description>
+                </property>
+                <property>
+                    <name>yarn.nodemanager.resource.memory-mb</name>
+                    <value>2688</value>
+                    <description>Physical memory, in MB, to be made available to running containers</description>
+                </property>
+                <property>
+                    <name>yarn.nodemanager.resource.cpu-vcores</name>
+                    <value>3</value>
+                    <description>Number of CPU cores that can be allocated for containers.</description>
+                </property>
+            </configuration>
+
+        Note: by default `spark-submit` will launch 2 *executors*. Including the *application master* there will need to be
+        3 containers provisioned in total. The above config provides sufficient resources for a total of 3 containers w/ up
+        to (512MB + 384MB) RAM and 1 VCORE each.
+
 5.  Format the name node directory:
 
         $HADOOP_PREFIX/bin/hdfs namenode -format # In cluster environment, only on NAME NODE.
@@ -134,6 +175,16 @@ We install Hadoop locally to provide a more 'production realistic' environment f
     -   ResourceManager
 
     Troubleshoot by reading the logs if necessary (see below).
+
+#### Web UIs
+
+-   Name Node: http://localhost:50070/
+
+    Allows you to browse HDFS, among other things.
+
+-   Resource Manager: http://localhost:8088/
+
+    Allows you to list and terminate applications.
 
 #### Testing Hadoop works
 
@@ -203,7 +254,11 @@ the fat JAR by scoping them as `provided` configuration (see `build.sbt`).
 
 Submit the application to the Spark cluster.
 
-#### Option A) Run in interactive mode (non-clustered)
+#### Option A) Run in interactive mode (locally)
+
+In this setting, the *driver* will run in-process and parallelize work across N worker threads, where N is the number of logical
+cores on your machine (indicated by `[*]`). To specify a different number of worker threads, either replace with `[4]` (for 4
+worker threads) or remove `[_]` entirely to serialise the workload.
 
     $SPARK_HOME/bin/spark-submit \
       --master "local[*]" \
@@ -213,18 +268,39 @@ Submit the application to the Spark cluster.
 
 Note: You will receive *warnings* regarding Spark not replicating to any peers. This is because the input dstreams that receive data over
 the network (from Twitter in this case) attempt to persist data to two nodes by default. Otherwise if the executor fails, the block of
-data it was processing will get lost. However, when running in `--deploy-mode client` there's only one worker, so its impossible to persist
-to other peers.
+data it was processing will get lost. However, when running locally there's only one worker, so it's impossible to persist to other peers.
 
-Note 2: The `[*]` indicates that a worker thread should be created for each logical core on the machine. A fixed number can be provided,
-or the `[_]` can be omitted entirely for serial execution.
+#### Option B) Run in interactive mode (on Hadoop)
 
-#### Option B) Run in clustered mode
+In this setting, the *driver* will run in-process but will *distribute* work to "executor nodes" via the "application master node" (YARN
+terminology).
+
+    $SPARK_HOME/bin/spark-submit \
+      --master "yarn" \
+      --deploy-mode client \
+      --class com.wagerfield.spark.twitter.Application \
+      --executor-memory 512m \
+      --executor-cores 1 \
+      --num-executors 2 \
+      --driver-memory 512m \
+      --driver-cores 1 \
+      target/scala-2.11/spark-twitter-example-assembly-1.0.jar
+
+Note: When using YARN as the cluster manager, the resource manager's address is picked up from the Hadoop configuration located by the
+environment variable `HADOOP_CONF_DIR` we defined previously. Therefore `--master` is just `yarn`.
+
+#### Option C) Run in non-interactive mode (on Hadoop)
+
+In this setting, the *driver* will run out-of-process and within the "application master node", which will then distribute work to the
+"executor nodes".
 
     $SPARK_HOME/bin/spark-submit \
       --master "yarn" \
       --deploy-mode cluster \
       --class com.wagerfield.spark.twitter.Application \
+      --executor-memory 512m \
+      --executor-cores 1 \
+      --num-executors 2 \
+      --driver-memory 512m \
+      --driver-cores 1 \
       target/scala-2.11/spark-twitter-example-assembly-1.0.jar
-
-Note: Yarn... something about just specifying 'yarn'.
