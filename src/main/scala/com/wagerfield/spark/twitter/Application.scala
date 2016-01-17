@@ -8,32 +8,30 @@ import scala.io.StdIn
 
 object Application {
   def main(args: Array[String]): Unit = {
-    val sparkConfig = new SparkConf()
-      .setAppName("Spark Twitter Example")
-      .setMaster("local[4]")
+    val sparkConfig = new SparkConf().setAppName("Spark Twitter Example")
 
     // Creates the SparkContext automatically and stops it when the stream stops. Only one active
     // stream is allowed per SparkContext.
     val streamingContext = new StreamingContext(sparkConfig, Seconds(1))
 
-    // Input discretized stream, from Twitter:
+    // Inputs:
     val allTweets = TwitterUtils.createStream(streamingContext, None)
 
     // Stateless transformations:
-    val englishLanguageTweets = allTweets.filter(_.getLang == "en")
-    val tweetText = englishLanguageTweets.map(_.getText)
-    val unifiedWordSequence = tweetText.flatMap(_.split(' ')).map((_, 1))
+    val tweetText = allTweets.map(_.getText)
+    val unifiedTermSequence = tweetText.flatMap(_.split(' ')).map(_.toLowerCase)
+    val userMentions = unifiedTermSequence.filter(s => s.startsWith("@") && s.length > 1).map((_, 1))
 
     // Stateful transformation:
-    val wordsWithCount = unifiedWordSequence.reduceByKeyAndWindow((a: Int, b: Int) => a + b, Seconds(20), Seconds(5))
+    val userMentionsWithCount = userMentions.reduceByKeyAndWindow((a: Int, b: Int) => a + b, Seconds(30), Seconds(5))
 
-    // RDD transformation:
-    val wordsSortedByCount = wordsWithCount.transform { rdd =>
+    // RDD transformation (sort operation):
+    val usersSortedByMentionCount = userMentionsWithCount.transform { rdd =>
       rdd.sortBy(_._2, ascending = false)
     }
 
     // Output operation. Similar to an RDD action, except it automatically gets run on each time step.
-    wordsSortedByCount.print()
+    usersSortedByMentionCount.print()
 
     streamingContext.start()
     Console.println("Press [enter] to exit.")
