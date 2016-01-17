@@ -1,8 +1,10 @@
 # Spark Twitter Example
 
+Spark example app that demonstrates, on a broad level, various aspects of Spark.
+
 ## Setup
 
-Instructions tested against OS X 10.11.
+These instructions have been tested against OS X 10.11.
 
 ### 1) Install Spark 1.6
 
@@ -45,18 +47,18 @@ Instructions tested against OS X 10.11.
     Note: Every SparkContext (driver node) launches a web UI, by default on port `4040`. If multiple SparkContexts are running on
     the same host, they will bind to successive ports (`4041`, `4042`, etc).
 
-### 2) Install Hadoop (with YARN)
+### 2) Install Hadoop (and YARN)
+
+We install Hadoop locally to provide a more 'production realistic' environment for executing our Spark application.
 
 *Quick Hadoop refresher:* Hadoop can be simplified into 2 components:
 
 -   HDFS, a distributed file system, containing 1x `NameNode` to store metadata for all files, and many `DataNode`s to store the
     actual data.
 
--   YARN, a resource manager which allocates containers where jobs can run using data stored in HDFS.
+-   YARN, a resource manager which allocates containers where jobs can be run using data stored in HDFS.
 
-We install Hadoop locally to provide a more 'production realistic' environment for executing our Spark application.
-
-1.  Find and install location for Hadoop and CD to it. E.g.:
+1.  Choose an install location for Hadoop and CD to it. E.g.:
 
         cd ~/Applications
 
@@ -78,7 +80,7 @@ We install Hadoop locally to provide a more 'production realistic' environment f
 
 4.  Configure Hadoop for standalone installation:
 
-    1.  Replace `<configuration>` element in file `$HADOOP_PREFIX/etc/hadoop/hdfs-site.xml` with:
+    1.  Replace the `<configuration>` element in file `$HADOOP_PREFIX/etc/hadoop/hdfs-site.xml` with:
 
             <configuration>
                 <property>
@@ -94,9 +96,9 @@ We install Hadoop locally to provide a more 'production realistic' environment f
                 </property>
             </configuration>
 
-        *Important:* change paths to your directory.
+        *Important:* change paths to match your own.
 
-    2.  Replace `<configuration>` element in file `$HADOOP_PREFIX/etc/hadoop/core-site.xml` with:
+    2.  Replace the `<configuration>` element in file `$HADOOP_PREFIX/etc/hadoop/core-site.xml` with:
 
             <configuration>
                 <property>
@@ -110,7 +112,7 @@ We install Hadoop locally to provide a more 'production realistic' environment f
 
         $HADOOP_PREFIX/bin/hdfs namenode -format # In cluster environment, only on NAME NODE.
 
-6.  Run the daemons. *Must be run after reboots too.*
+6.  Run the daemons. **Must be run after reboots too.**
 
         $HADOOP_PREFIX/sbin/hadoop-daemon.sh start namenode # In cluster environment, only on NAME NODE.
         $HADOOP_PREFIX/sbin/hadoop-daemon.sh start datanode # In cluster environment, all SLAVE NODES.
@@ -127,11 +129,11 @@ We install Hadoop locally to provide a more 'production realistic' environment f
 
     -   ResourceManager
 
-    If not, then troubleshoot!
+    Troubleshoot by reading the logs if necessary (see below).
 
 #### Testing Hadoop works
 
-1.  You can test if Hadoop works by running a shell command (such as `date`) across the cluster. The following command does
+1.  Check if Hadoop works by running a shell command (such as `date`) across the cluster. The following command does
     exactly that, spawning `2` containers, thus producing 2 different (but similar) dates:
 
         $HADOOP_PREFIX/bin/hadoop jar $HADOOP_PREFIX/share/hadoop/yarn/hadoop-yarn-applications-distributedshell-2.7.0.jar org.apache.hadoop.yarn.applications.distributedshell.Client --jar $HADOOP_PREFIX/share/hadoop/yarn/hadoop-yarn-applications-distributedshell-2.7.0.jar --shell_command date --num_containers 2 --master_memory 1024
@@ -150,11 +152,11 @@ We install Hadoop locally to provide a more 'production realistic' environment f
 
     Important: replace `<APPLICATION ID>` with the ID you found in the output.
 
-#### Troubleshooting
+#### Troubleshooting via Hadoop logs
 
 Check the logs: `$HADOOP_PREFIX/logs/<daemon with problems>.log`
 
-To stop, us same procedure as above, but with `stop` instead of `start`....
+To stop the daemons, use same procedure as above, but with `stop` instead of `start`....
 
     $HADOOP_PREFIX/sbin/hadoop-daemon.sh stop namenode
     $HADOOP_PREFIX/sbin/hadoop-daemon.sh stop datanode
