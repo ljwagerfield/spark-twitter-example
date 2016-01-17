@@ -45,7 +45,123 @@ Instructions tested against OS X 10.11.
     Note: Every SparkContext (driver node) launches a web UI, by default on port `4040`. If multiple SparkContexts are running on
     the same host, they will bind to successive ports (`4041`, `4042`, etc).
 
-### 2) Get Twitter API Keys
+### 2) Install Hadoop (with YARN)
+
+*Quick Hadoop refresher:* Hadoop can be simplified into 2 components:
+
+-   HDFS, a distributed file system, containing 1x `NameNode` to store metadata for all files, and many `DataNode`s to store the
+    actual data.
+
+-   YARN, a resource manager which allocates containers where jobs can run using data stored in HDFS.
+
+We install Hadoop locally to provide a more 'production realistic' environment for executing our Spark application.
+
+1.  Find and install location for Hadoop and CD to it. E.g.:
+
+        cd ~/Applications
+
+2.  Download Hadoop using the same version specified above:
+
+        curl -O http://apache.mirrors.spacedump.net/hadoop/common/hadoop-2.7.0/hadoop-2.7.0.tar.gz
+        tar xvf hadoop-2.7.0.tar.gz --gzip
+        rm hadoop-2.7.0.tar.gz
+
+3.  Set up the following environment variables (by saving to ``~/.zshrc` or equivalent):
+
+        export HADOOP_PREFIX=/Users/lawrence/Applications/hadoop-2.7.0 # Change this to your directory!
+        export HADOOP_HOME=$HADOOP_PREFIX
+        export HADOOP_COMMON_HOME=$HADOOP_PREFIX
+        export HADOOP_CONF_DIR=$HADOOP_PREFIX/etc/hadoop
+        export HADOOP_HDFS_HOME=$HADOOP_PREFIX
+        export HADOOP_MAPRED_HOME=$HADOOP_PREFIX
+        export HADOOP_YARN_HOME=$HADOOP_PREFIX
+
+4.  Configure Hadoop for standalone installation:
+
+    1.  Replace `<configuration>` element in file `$HADOOP_PREFIX/etc/hadoop/hdfs-site.xml` with:
+
+            <configuration>
+                <property>
+                    <name>dfs.datanode.data.dir</name>
+                    <value>file:///Users/lawrence/Applications/hadoop-2.7.0/hdfs/datanode</value>
+                    <description>Comma separated list of paths on the local filesystem of a DataNode where it should store its blocks.</description>
+                </property>
+
+                <property>
+                    <name>dfs.namenode.name.dir</name>
+                    <value>file:///Users/lawrence/Applications/hadoop-2.7.0/hdfs/namenode</value>
+                    <description>Path on the local filesystem where the NameNode stores the namespace and transaction logs persistently.</description>
+                </property>
+            </configuration>
+
+        *Important:* change paths to your directory.
+
+    2.  Replace `<configuration>` element in file `$HADOOP_PREFIX/etc/hadoop/core-site.xml` with:
+
+            <configuration>
+                <property>
+                    <name>fs.defaultFS</name>
+                    <value>hdfs://localhost/</value>
+                    <description>NameNode URI</description>
+                </property>
+            </configuration>
+
+5.  Format the name node directory:
+
+        $HADOOP_PREFIX/bin/hdfs namenode -format # In cluster environment, only on NAME NODE.
+
+6.  Run the daemons. *Must be run after reboots too.*
+
+        $HADOOP_PREFIX/sbin/hadoop-daemon.sh start namenode # In cluster environment, only on NAME NODE.
+        $HADOOP_PREFIX/sbin/hadoop-daemon.sh start datanode # In cluster environment, all SLAVE NODES.
+        $HADOOP_PREFIX/sbin/yarn-daemon.sh start nodemanager  # In cluster environment, all SLAVE NODES.
+        $HADOOP_PREFIX/sbin/yarn-daemon.sh start resourcemanager  # In cluster environment, only on RESOURCEMANAGER NODE.
+
+    Run `jps` and check the following services are running:
+
+    -   NameNode
+
+    -   DataNode
+
+    -   NodeManager
+
+    -   ResourceManager
+
+    If not, then troubleshoot!
+
+#### Testing Hadoop works
+
+1.  You can test if Hadoop works by running a shell command (such as `date`) across the cluster. The following command does
+    exactly that, spawning `2` containers, thus producing 2 different (but similar) dates:
+
+        $HADOOP_PREFIX/bin/hadoop jar $HADOOP_PREFIX/share/hadoop/yarn/hadoop-yarn-applications-distributedshell-2.7.0.jar org.apache.hadoop.yarn.applications.distributedshell.Client --jar $HADOOP_PREFIX/share/hadoop/yarn/hadoop-yarn-applications-distributedshell-2.7.0.jar --shell_command date --num_containers 2 --master_memory 1024
+
+    Note: the command reuses the same JAR since the `Client` and `ApplicationMaster` classes are both defined within it.
+
+2.  Verify console output ends with:
+
+        INFO distributedshell.Client: Application completed successfully
+
+3.  Find the application ID in the output (looks like `application_1453042926574_0001`).
+
+4.  Read the outputs from each of the `2` shells via:
+
+        grep "" $HADOOP_PREFIX/logs/userlogs/<APPLICATION ID>/**/stdout
+
+    Important: replace `<APPLICATION ID>` with the ID you found in the output.
+
+#### Troubleshooting
+
+Check the logs: `$HADOOP_PREFIX/logs/<daemon with problems>.log`
+
+To stop, us same procedure as above, but with `stop` instead of `start`....
+
+    $HADOOP_PREFIX/sbin/hadoop-daemon.sh stop namenode
+    $HADOOP_PREFIX/sbin/hadoop-daemon.sh stop datanode
+    $HADOOP_PREFIX/sbin/yarn-daemon.sh stop nodemanager
+    $HADOOP_PREFIX/sbin/yarn-daemon.sh stop resourcemanager
+
+### 3) Get Twitter API Keys
 
 1.  Sign-in to Twitter.
 
@@ -81,26 +197,28 @@ the fat JAR by scoping them to `provided` configuration (see `build.sbt`).
 
 Submit the application to the Spark cluster.
 
+#### Option A) Run in interactive mode (non-clustered)
+
     $SPARK_HOME/bin/spark-submit \
       --master "local[*]" \
       --deploy-mode client \
       --class com.wagerfield.spark.twitter.Application \
       target/scala-2.11/spark-twitter-example-assembly-1.0.jar
 
-These arguments indicate, in respective order:
-
--   The cluster to submit to (`--master`).
-    We're running the application locally, creating a worker thread for each logical core on the machine (as indicated by `[*]`).
-
--   Whether to run on the worker nodes or locally (`--deploy-mode`).
-    We specify a `client` deployment mode to have the application run in-process, thus allowing us to interact with the shell.
-    The alternative deployment mode, `cluster`, is not available for `local` masters.
-
--   The main class of the application.
-
--   The previously assembled fat JAR.
-
 Note: You will receive *warnings* regarding Spark not replicating to any peers. This is because the input dstreams that receive data over
 the network (from Twitter in this case) attempt to persist data to two nodes by default. Otherwise if the executor fails, the block of
 data it was processing will get lost. However, when running in `--deploy-mode client` there's only one worker, so its impossible to persist
 to other peers.
+
+Note 2: The `[*]` indicates that a worker thread should be created for each logical core on the machine. A fixed number can be provided,
+or the `[_]` can be omitted entirely for serial execution.
+
+#### Option B) Run in clustered mode
+
+    $SPARK_HOME/bin/spark-submit \
+      --master "yarn" \
+      --deploy-mode cluster \
+      --class com.wagerfield.spark.twitter.Application \
+      target/scala-2.11/spark-twitter-example-assembly-1.0.jar
+
+Note: Yarn... something about just specifying 'yarn'.
