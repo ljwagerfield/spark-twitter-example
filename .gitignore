@@ -1,0 +1,56 @@
+twitter4j.properties
+
+*.class
+*.log
+
+# LevelDB default path
+journal/
+
+# Java
+*.jar
+*.war
+*.ear
+
+# SBT
+.cache/
+.history/
+.lib/
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+# Scala-IDE
+.scala_dependencies
+
+# Intellij IDEA
+.idea/
+.idea_modules/
+*.ipr
+*.iws
+*.iml
+out/
+
+# Sublime
+*.sublime-workspace
+
+# OSX
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
