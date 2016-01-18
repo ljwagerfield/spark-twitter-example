@@ -46,8 +46,11 @@ case class Program(checkpointDirectory: String) {
       rdd.sortBy(_._2, ascending = false)
     }
 
+    // Cache the transformed DStream ahead of it being referenced by multiple operations.
+    val cachedSortedUsers = usersSortedByMentionCount.cache()
+
     // Output operations. Similar to RDD actions, except automatically run on each time step.
-    usersSortedByMentionCount
+    cachedSortedUsers
       .map(kvp => Vectors.dense(kvp._2))
       .foreachRDD { rdd =>
         val summary: MultivariateStatisticalSummary = Statistics.colStats(rdd)
@@ -64,7 +67,7 @@ case class Program(checkpointDirectory: String) {
         println()
       }
 
-    usersSortedByMentionCount.foreachRDD { rdd =>
+    cachedSortedUsers.foreachRDD { rdd =>
       println("Top recently mentioned users:")
       val topMentionedUsers = rdd.take(topUserCount)
       val formattedLines = topMentionedUsers.zipWithIndex.map {
