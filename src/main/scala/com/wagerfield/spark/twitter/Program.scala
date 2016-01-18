@@ -56,7 +56,7 @@ case class Program(checkpointDirectory: String) {
         println("-----------------------------")
         println("TWITTER 'MENTIONS' STATISTICS")
         println("-----------------------------")
-        println(s"Recorded for the last $windowDurationSeconds seconds, updated every $slideDurationSeconds seconds.")
+        println(s"Recorded for the last $windowDurationSeconds seconds, updates every $slideDurationSeconds seconds.")
         println()
         println(s"Mean:     ${summary.mean(0)}")
         println(s"Variance: ${summary.variance(0)}")

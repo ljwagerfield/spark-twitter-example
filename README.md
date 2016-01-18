@@ -12,12 +12,12 @@ Spark example app that demonstrates, on a broad level, various aspects of Spark.
 
 ## Quick Example
 
-The following grab of `stdout` demonstrates the application's output for each time step:
+The following snippet of `stdout` demonstrates the application's output for each time step:
 
     -----------------------------
     TWITTER 'MENTIONS' STATISTICS
     -----------------------------
-    Recorded for the last 30 seconds, updated every 5 seconds.
+    Recorded for the last 30 seconds, updates every 5 seconds.
     
     Mean:     1.1104734576757536
     Variance: 0.43749072379161924
