@@ -263,7 +263,7 @@ worker threads) or remove `[_]` entirely to serialise the workload.
     $SPARK_HOME/bin/spark-submit \
       --master "local[*]" \
       --deploy-mode client \
-      --class com.wagerfield.spark.twitter.Application \
+      --class com.wagerfield.spark.twitter.Bootstrap \
       target/scala-2.11/spark-twitter-example-assembly-1.0.jar \
       ~/spark-checkpoints
 
@@ -279,7 +279,7 @@ terminology).
     $SPARK_HOME/bin/spark-submit \
       --master "yarn" \
       --deploy-mode client \
-      --class com.wagerfield.spark.twitter.Application \
+      --class com.wagerfield.spark.twitter.Bootstrap \
       --executor-memory 512m \
       --executor-cores 1 \
       --num-executors 2 \
@@ -299,7 +299,7 @@ In this setting, the *driver* will run out-of-process and within the "applicatio
     $SPARK_HOME/bin/spark-submit \
       --master "yarn" \
       --deploy-mode cluster \
-      --class com.wagerfield.spark.twitter.Application \
+      --class com.wagerfield.spark.twitter.Bootstrap \
       --executor-memory 512m \
       --executor-cores 1 \
       --num-executors 2 \
