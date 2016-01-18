@@ -24,11 +24,11 @@ case class Program(checkpointDirectory: String) {
     val sparkConfig = new SparkConf().setAppName("Spark Twitter Example")
 
     // Creates the SparkContext automatically and stops it when the stream stops. Only one active
-    // stream is allowed per SparkContext.
+    // input stream is allowed per SparkContext.
     val streamingContext = new StreamingContext(sparkConfig, Seconds(1))
     streamingContext.checkpoint(checkpointDirectory)
 
-    // Inputs:
+    // Input stream:
     val allTweets = TwitterUtils.createStream(streamingContext, None)
 
     // Stateless transformations:
