@@ -2,11 +2,31 @@
 
 Spark example app that demonstrates, on a broad level, various aspects of Spark.
 
+-   [**Quick Example**](#quick-example)
+
 -   [**Setup**](#setup)
 
 -   [**Running**](#running-the-application)
 
 *Special thanks to Alex Fonseca for his [YARN/Hadoop set up guide](http://www.alexjf.net/blog/distributed-systems/hadoop-yarn-installation-definitive-guide/)*
+
+## Quick Example
+
+The following grab of `stdout` demonstrates the application's output for each time step:
+
+    -----------------------------
+    TWITTER 'MENTIONS' STATISTICS
+    -----------------------------
+    Recorded for the last 30 seconds, updated every 5 seconds.
+    
+    Mean:     1.1104734576757536
+    Variance: 0.43749072379161924
+    Range:    1 to 9
+    
+    Top recently mentioned users:
+    1. @kanyewest       (9 mentions)
+    2. @coolpetvideo    (8 mentions)
+    3. @stylefashionhub (7 mentions)
 
 ## Setup
 
