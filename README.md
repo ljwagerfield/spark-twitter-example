@@ -181,8 +181,8 @@ We install Hadoop locally to provide a more 'production realistic' environment f
 
         $HADOOP_PREFIX/sbin/hadoop-daemon.sh start namenode # In cluster environment, only on NAME NODE.
         $HADOOP_PREFIX/sbin/hadoop-daemon.sh start datanode # In cluster environment, all SLAVE NODES.
-        $HADOOP_PREFIX/sbin/yarn-daemon.sh start nodemanager  # In cluster environment, all SLAVE NODES.
-        $HADOOP_PREFIX/sbin/yarn-daemon.sh start resourcemanager  # In cluster environment, only on RESOURCEMANAGER NODE.
+        $HADOOP_PREFIX/sbin/yarn-daemon.sh start nodemanager # In cluster environment, all SLAVE NODES.
+        $HADOOP_PREFIX/sbin/yarn-daemon.sh start resourcemanager # In cluster environment, only on RESOURCEMANAGER NODE.
 
     Run `jps` and check the following services are running:
 
